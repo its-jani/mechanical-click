@@ -1,0 +1,54 @@
+[package]
+name = "mechanical-click"
+version = "0.1.0"
+edition = "2024"
+description = "Ultra-lightweight mechanical keyboard sounds for Windows"
+license = "MIT"
+build = "build.rs"
+
+[dependencies]
+cpal = "0.18"
+crossbeam-channel = "0.5"
+eframe = { version = "0.37", default-features = false, features = [
+    "accesskit",
+    "clipboard",
+    "glow",
+    "links",
+] }
+egui = "0.37"
+hound = "3"
+lewton = "0.10"
+muda = "0.21"
+rfd = "0.17"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tray-icon = "0.26"
+ureq = "3"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_System_LibraryLoader",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+] }
+winreg = "0.56"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[build-dependencies]
+winres = "0.1"
+
+# Small, fast, self-contained binary. The UI re-tessellates on every pass, so
+# speed wins over the last few hundred KB here.
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 2
