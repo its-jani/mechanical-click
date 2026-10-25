@@ -124,6 +124,28 @@ const BUNDLED: &[Bundled] = &[
         press: include_bytes!("../../assets/default_sounds/mx-speed-silver-press.wav"),
         release: include_bytes!("../../assets/default_sounds/mx-speed-silver-up.wav"),
     },
+    Bundled {
+        id: "keyboard-press",
+        name: "SoundFX Keyboard Press",
+        kind: SwitchKind::Thocky,
+        author: "SoundFX",
+        blurb: "Punchy full-size keyboard press with a deep, satisfying bottom-out.",
+        version: "1.0.0",
+        featured: false,
+        press: include_bytes!("../../assets/default_sounds/keyboard-press-press.wav"),
+        release: include_bytes!("../../assets/default_sounds/keyboard-press-up.wav"),
+    },
+    Bundled {
+        id: "keytyping",
+        name: "Mintty Keytyping",
+        kind: SwitchKind::Clicky,
+        author: "Mintty",
+        blurb: "Classic terminal keytyping clips - crisp, bright and unmistakable.",
+        version: "1.0.0",
+        featured: false,
+        press: include_bytes!("../../assets/default_sounds/keytyping-press.wav"),
+        release: include_bytes!("../../assets/default_sounds/keytyping-up.wav"),
+    },
 ];
 
 pub fn bundled_catalog() -> Vec<StorePack> {
@@ -533,5 +555,18 @@ mod tests {
         let packs = parse_manifest(EXAMPLE_MANIFEST, "https://host/manifest.json").unwrap();
         assert_eq!(packs.len(), 1);
         assert_eq!(packs[0].kind, SwitchKind::Tactile);
+    }
+
+    #[test]
+    fn bundled_samples_decode() {
+        for pack in bundled_catalog() {
+            let PackSource::Bundled { press, release } = pack.source else {
+                unreachable!("bundled catalogue only contains bundled packs");
+            };
+            for (name, bytes) in [("press", press), ("release", release)] {
+                crate::audio::decode::decode(bytes, "wav")
+                    .unwrap_or_else(|e| panic!("{} {name}: {e}", pack.id));
+            }
+        }
     }
 }
