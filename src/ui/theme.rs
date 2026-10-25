@@ -125,6 +125,16 @@ impl Palette {
         }
     }
 
+    /// Accent reserved for featured store cards: `#2F81F7` on dark, indigo on
+    /// light. Kept separate from `accent` so primary buttons stay stable.
+    pub const fn featured_accent(&self) -> Color32 {
+        if self.dark {
+            self.accent
+        } else {
+            self.accent_hi
+        }
+    }
+
     pub fn kind_color(&self, kind: crate::config::SwitchKind) -> Color32 {
         let (r, g, b) = kind.rgb();
         let base = Color32::from_rgb(r, g, b);

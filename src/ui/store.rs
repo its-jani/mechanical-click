@@ -8,7 +8,7 @@ use super::page_header;
 use super::theme::{self, Palette, alpha, mix};
 use super::widgets::{self, CardStyle, Icon};
 use super::{Action, App, Nav};
-use crate::store::StorePack;
+use crate::store::{PackSource, StorePack};
 
 impl App {
     pub(super) fn view_store(&mut self, ui: &mut Ui, act: &mut Option<Action>) {
@@ -197,7 +197,7 @@ fn featured_card(
     painter.rect_stroke(
         rect,
         CornerRadius::same(15),
-        Stroke::new(1.0, mix(pal.border, kind_color, 0.40)),
+        Stroke::new(1.0, mix(pal.border, pal.featured_accent(), 0.65)),
         egui::StrokeKind::Inside,
     );
 
@@ -211,8 +211,11 @@ fn featured_card(
         ui.vertical(|ui| {
             ui.set_width((inner.width() - 220.0).max(220.0));
             ui.horizontal(|ui| {
-                widgets::badge(ui, pal, "Featured", pal.warn);
+                widgets::badge(ui, pal, "Featured", pal.featured_accent());
                 widgets::badge(ui, pal, pack.kind.label(), kind_color);
+                if matches!(pack.source, PackSource::Bundled { .. }) {
+                    widgets::badge(ui, pal, "Bundled", pal.text_faint);
+                }
                 if installed {
                     widgets::status_pill(ui, pal, "Installed", pal.success);
                 }
@@ -284,6 +287,9 @@ fn pack_card(
         });
         ui.horizontal(|ui| {
             widgets::badge(ui, pal, pack.kind.label(), kind_color);
+            if matches!(pack.source, PackSource::Bundled { .. }) {
+                widgets::badge(ui, pal, "Bundled", pal.text_faint);
+            }
             widgets::label(ui, &pack.author, theme::font(10.5), pal.text_faint);
         });
         ui.add(
@@ -340,7 +346,7 @@ fn pack_actions(
     if widgets::button(ui, pal, "Install", widgets::ButtonKind::Primary).clicked() {
         *act = Some(Action::InstallPack(pack.id.clone()));
     }
-    if matches!(pack.source, crate::store::PackSource::Bundled { .. })
+    if matches!(pack.source, PackSource::Bundled { .. })
         && widgets::icon_button(ui, pal, Icon::Play, false)
             .on_hover_text("Preview")
             .clicked()

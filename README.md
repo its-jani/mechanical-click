@@ -37,12 +37,53 @@ Grab the latest build from the
 [Releases page](https://github.com/its-jani/mechanical-click/releases):
 
 1. Download `mechanical-click.exe` from the latest release assets.
-2. Run it — no installer, no dependencies. Windows SmartScreen may ask you to
-   confirm a first run for an unsigned app; choose **More info → Run anyway**.
+2. Run it — no installer, no dependencies.
 3. Right-click the tray icon to mute, open settings, or quit.
 
 To install an older or updated build, just replace the exe — your settings and
 downloaded packs live in `%APPDATA%\mechanical-click\` and survive upgrades.
+
+## Quick install (PowerShell)
+
+Paste this **one line** into PowerShell (Windows PowerShell 5.1 or pwsh 7).
+It downloads the latest release, unblocks it, installs it to
+`%LOCALAPPDATA%\Programs\mechanical-click\` and starts it minimized to the tray:
+
+```powershell
+$d="$env:LOCALAPPDATA\Programs\mechanical-click"; New-Item -ItemType Directory -Force -Path $d | Out-Null; Invoke-WebRequest "https://github.com/its-jani/mechanical-click/releases/latest/download/mechanical-click.exe" -OutFile "$d\mechanical-click.exe"; Unblock-File "$d\mechanical-click.exe"; Start-Process "$d\mechanical-click.exe" -ArgumentList "--background"
+```
+
+Optional: create a Desktop shortcut too (run it right after the line above,
+in the same session):
+
+```powershell
+$s = (New-Object -ComObject WScript.Shell).CreateShortcut("$([Environment]::GetFolderPath('Desktop'))\mechanical-click.lnk"); $s.TargetPath = "$d\mechanical-click.exe"; $s.WorkingDirectory = $d; $s.Arguments = "--background"; $s.IconLocation = "$d\mechanical-click.exe,0"; $s.Save()
+```
+
+To update later, simply re-run the one-liner — it overwrites the binary in
+place. Settings and installed sound packs are kept in `%APPDATA%\mechanical-click\`.
+
+### SmartScreen Warning
+
+The binary is not code-signed (Authenticode certificates are expensive), so a
+downloaded copy carries the "Mark of the Web" and Windows SmartScreen may show
+*"Windows protected your PC — Unknown publisher"* on the first run. Two ways
+past it:
+
+- **Recommended:** install with the one-liner above — `Unblock-File` strips the
+  Mark of the Web, so SmartScreen stays quiet.
+- **Manual:** after downloading, right-click the file → Properties → check
+  *Unblock*, or run:
+
+  ```powershell
+  Unblock-File -Path .\mechanical-click.exe
+  ```
+
+- If you already dismissed the dialog once, choose **More info → Run anyway** —
+  the app is added to the SmartScreen allow list on that machine.
+
+The app needs no admin rights: it installs a per-user low-level keyboard hook
+and lives entirely in your profile.
 
 ## Building from source
 
@@ -56,6 +97,11 @@ cargo build --release
 Developer notes:
 
 - `cargo run` launches the UI; `cargo run -- --background` starts hidden in the tray.
+- `cargo run -- --smoke-test` boots the real subsystems headlessly — low-level
+  keyboard hook, cpal audio sink (plus decoding of every embedded store sample)
+  and the tray icon — prints one line per check and exits. Works on the shipped
+  exe too (`mechanical-click.exe --smoke-test`, attaches to the parent
+  console). Exit codes: `0` pass, `1` failed check, `124` init watchdog fired.
 - `cargo test` runs the unit tests (manifest parsing, relative URL resolution,
   and a guard that every bundled sample decodes).
 - Synthesized demo assets and the app icon are generated offline by
@@ -96,6 +142,7 @@ src/
   audio/         cpal output engine, voice pool, wav/ogg decoding (hound/lewton)
   store/         bundled catalogue + remote manifest/zip install pipeline
   config/        settings, switch registry, on-disk library under %APPDATA%
+  smoke.rs       headless --smoke-test subsystem boot check
   ui/            egui interface: home, library, store, settings, theme
   tray.rs        system tray menu and click routing (tray-icon + muda)
   perf.rs        CPU / working-set HUD sampled off the hot path

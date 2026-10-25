@@ -12,6 +12,7 @@ mod config;
 mod hook;
 mod perf;
 mod platform;
+mod smoke;
 mod store;
 mod tray;
 mod ui;
@@ -19,9 +20,16 @@ mod ui;
 use eframe::egui;
 
 fn main() -> eframe::Result<()> {
-    let start_hidden = std::env::args()
-        .skip(1)
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let start_hidden = args
+        .iter()
         .any(|arg| arg == "--background" || arg == "--tray" || arg == "--hidden");
+
+    // Headless subsystem boot check: runs before the instance guard so CI can
+    // verify a build while the app itself is running.
+    if args.iter().any(|arg| arg == "--smoke-test") {
+        std::process::exit(smoke::run());
+    }
 
     // Second copy: leave the running instance alone and exit quietly.
     let Some(instance) = platform::SingleInstance::acquire() else {
